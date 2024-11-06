@@ -9,14 +9,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Scanner;
 
 public class GithubUserActivity {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        if(args.length < 1){
+            System.out.println("Usage: github-activity <username>");
+            return;
+        }
+        String userInput = args[0];
         try {
-            System.out.println("Enter the username: ");
-            String userInput = scanner.nextLine();
             int n = 5;
             URL url = new URL("https://api.github.com/users/"+userInput+"/events");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -33,21 +34,48 @@ public class GithubUserActivity {
                 while((inputLine = bufferedReader.readLine()) != null){
                     sb.append(inputLine);
                 }
-
                 Object file = JSONValue.parse(sb.toString());
 
                 if (file instanceof JSONArray){
                     JSONArray jsonArray = (JSONArray) file;
 
-
-                    for(int i=0;i<n;i++) {
+                    for(int i=0;i<Math.min(n, jsonArray.size());i++) {
                         JSONObject jsonObject = (JSONObject) jsonArray.get(i);
-                        System.out.println("Event "+i+1);
-                        System.out.println("Created_at: "+jsonObject.get("created_at"));
-                        System.out.println("Id: "+jsonObject.get("id"));
-                        System.out.println("Type: "+jsonObject.get("type"));
-                        JSONObject payload = (JSONObject) jsonObject.get("payload");
-                        System.out.println("Payload: "+payload+"\n");
+
+                        String eventType = (String) jsonObject.get("type");
+
+                        String activityMessage = "";
+                        switch (eventType) {
+                            case "PushEvent": {
+                                JSONObject payload = (JSONObject) jsonObject.get("payload");
+                                long commits = (long) payload.get("size");
+                                JSONObject repo = (JSONObject) jsonObject.get("repo");
+                                String repoName = (String) repo.get("name");
+                                activityMessage = "Pushed " + commits + " commits to " + repoName;
+                                break;
+                            }
+                            case "IssuesEvent": {
+                                JSONObject payload = (JSONObject) jsonObject.get("payload");
+                                String action = (String) payload.get("action");
+                                JSONObject repo = (JSONObject) jsonObject.get("repo");
+                                String repoName = (String) repo.get("name");
+
+                                if (action.equals("opened")) {
+                                    activityMessage = "Opened a new issue in " + repoName;
+                                }
+                                break;
+                            }
+                            case "WatchEvent": {
+                                JSONObject repository = (JSONObject) jsonObject.get("repo");
+                                String repoName = (String) repository.get("name");
+                                activityMessage = "Starred " + repoName;
+                                break;
+                            }
+                        }
+
+                        if(!activityMessage.isEmpty()){
+                            System.out.println("- "+activityMessage);
+                        }
                     }
                 }else{
                     System.out.println("Expected a JSON array but got something else.");
