@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="weight.css">
+</head>
+<body>
+   
+    <div class="container">
+        <div class="main-container">
+            <h1>Unit convertor</h1>
+            <div class="unit-headings">
+                <h3 ><a href="index.html" target="_self">Length</a></h3>
+                <h3 id="current-unit"> Weight</h3>
+                <h3> <a href="temperature.html" target="_self">Temperature</a></h3>
+            </div>
+
+            <div class="result-container">
+                <h3>Result of your calculation</h3>
+                <h2 id="result"></h2>
+                <button onclick="reset()">reset</button>
+            </div>
+            
+            <div class="unit-input">
+                <label for="weight">Enter the weight to convert</label>
+                <input type="text" id="weight">
+                <label for="unitFrom">Unit to convert from</label>
+                <select id="unitFrom">
+                    <option value="Kilogram" selected>Kilogram</option>
+                    <option value="Milligram">Milligram</option>
+                    <option value="Pound">Pound</option>
+                    <option value="Ounce">Ounce</option>
+                </select>
+                <label for="unitTo">Unit to conver to</label>
+                <select id="unitTo">
+                    <option value="Kilogram">Kilogram</option>
+                    <option value="Milligram" selected>Milligram</option>
+                    <option value="Pound">Pound</option>
+                    <option value="Ounce">Ounce</option>
+                </select>
+                <button onclick="submit()">convert</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        const handleWeightUnitChange = () => {
+            const unitFrom = document.getElementById('unitFrom').value;
+            const unitTo = document.getElementById('unitTo').value;
+
+            if (unitFrom === unitTo) {
+                let newUnit = unitFrom === 'Kilogram' ? 'Pound' :
+                              unitFrom === 'Milligram' ? 'Ounce' :
+                              unitFrom === 'Pound' ? 'Kilogram' : 'Milligram';
+                
+                document.getElementById('unitTo').value = newUnit;
+            }
+        };
+
+        document.getElementById('unitFrom').addEventListener('change', handleWeightUnitChange);
+        document.getElementById('unitTo').addEventListener('change', handleWeightUnitChange);
+   
+
+        const submit = async() => {
+            
+            let length = document.getElementById("weight").value;
+            let unitFrom = document.getElementById("unitFrom").value;
+            let unitTo = document.getElementById("unitTo").value;
+
+            if(unitFrom.length > 0 && unitTo.length > 0 && length != ''){
+                const data = {
+                    value : length,
+                    from: unitFrom,
+                    to: unitTo
+                }
+                try{
+                    const response = await fetch('http://192.168.1.8:8080/api/weight',{
+                        method:'POST',
+                        headers: {
+                            'Content-Type': 'application/json' // Tells the server to expect JSON data
+                        },
+                        body:JSON.stringify(data)
+                    })
+
+                    if(response.ok){
+                        const result = await response.json();
+                        console.log(result);
+                        
+                        let resultMessage = ` ${length} ${unitFrom} = ${result} ${unitTo}`;
+                        document.getElementById('result').textContent = resultMessage;
+
+                        document.querySelectorAll('.unit-input').forEach(el => el.style.display = 'none');
+                        document.querySelectorAll('.result-container').forEach(el => el.style.display = 'block');
+                    }else{
+                        throw new Error("Failed to convert");
+                    }
+                }
+                catch(error){
+                    console.error('Error',error);
+                    alert("An error occured");
+                }
+                
+            }else{
+                if (length == ''){
+                    alert("Enter the weight");
+                }
+            }
+            
+        }
+        
+        const reset = () => {
+            document.querySelectorAll('.result-container').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.unit-input').forEach(el => el.style.display = 'block');
+            console.log('calls');
+        }
+    </script>
+</body>
+</html>

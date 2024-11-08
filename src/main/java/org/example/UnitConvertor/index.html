@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+   
+    <div class="container">
+        <div class="main-container">
+            <h1>Unit convertor</h1>
+            <div class="unit-headings">
+                <h3 id="current-unit">Length</h3>
+                <h3> <a href="weight.html" target="_self">Weight</a></h3>
+                <h3> <a href="temperature.html" target="_self">Temperature</a></h3>
+            </div>
+
+            <div class="result-container">
+                <h3>Result of your calculation</h3>
+                <h2 id="result"></h2>
+                <button onclick="reset()">reset</button>
+            </div>
+            
+            <div class="unit-input">
+                <label for="length">Enter the length to convert</label>
+                <input type="text" id="length">
+                <label for="unitFrom">Unit to convert from</label>
+                <select id="unitFrom">
+                    <option value="Centimeter" selected>Centimeter</option>
+                    <option value="Milliimeter">Millimeter</option>
+                    <option value="Meter">Meter</option>
+                    <option value="Kilometer">Kilometer</option>
+                    <option value="Mile">Mile</option>
+                    <option value="Yard">Yard</option>
+                    <option value="Foot">Foot</option>
+                    <option value="Inch">Inch</option>
+                </select>
+               
+                <label for="unitTo">Unit to conver to</label>
+                <select id="unitTo">
+                    <option value="Centimeter">Centimeter</option>
+                    <option value="Milliimeter">Millimeter</option>
+                    <option value="Meter" selected>Meter</option>
+                    <option value="Kilometer">Kilometer</option>
+                    <option value="Mile">Mile</option>
+                    <option value="Yard">Yard</option>
+                    <option value="Foot">Foot</option>
+                    <option value="Inch">Inch</option>
+                </select>
+                <button onclick="submit()">convert</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const handleLengthUnitChange = () => {
+            const unitFrom = document.getElementById('unitFrom').value;
+            const unitTo = document.getElementById('unitTo').value;
+
+            if (unitFrom === unitTo) {
+                let newUnit = unitFrom === 'Centimeter' ? 'Meter' :
+                            unitFrom === 'Millimeter' ? 'Kilometer' :
+                            unitFrom === 'Meter' ? 'Kilometer' :
+                            unitFrom === 'Kilometer' ? 'Mile' :
+                            unitFrom === 'Mile' ? 'Yard' : 'Inch';
+                
+                document.getElementById('unitTo').value = newUnit;
+            }
+        };
+
+        document.getElementById('unitFrom').addEventListener('change', handleLengthUnitChange);
+        document.getElementById('unitTo').addEventListener('change', handleLengthUnitChange);
+
+        const submit = async() => {
+            
+            let length = document.getElementById("length").value;
+            let unitFrom = document.getElementById("unitFrom").value;
+            let unitTo = document.getElementById("unitTo").value;
+
+            if(unitFrom.length > 0 && unitTo.length > 0 && length != ''){
+                const data = {
+                    value : length,
+                    from: unitFrom,
+                    to: unitTo
+                }
+                try{
+                    const response = await fetch('http://192.168.1.8:8080/api/length',{
+                        method:'POST',
+                        headers: {
+                            'Content-Type': 'application/json' // Tells the server to expect JSON data
+                        },
+                        body:JSON.stringify(data)
+                    })
+
+                    if(response.ok){
+                        const result = await response.json();
+                        console.log(result);
+                        
+                        let resultMessage = ` ${length} ${unitFrom} = ${result} ${unitTo}`;
+                        document.getElementById('result').textContent = resultMessage;
+
+                        document.querySelectorAll('.unit-input').forEach(el => el.style.display = 'none');
+                        document.querySelectorAll('.result-container').forEach(el => el.style.display = 'block');
+                    }else{
+                        throw new Error("Failed to convert");
+                    }
+                }
+                catch(error){
+                    console.error('Error',error);
+                    alert(error);
+                }
+                
+            }else{
+                if (length == ''){
+                    alert("Enter the length");
+                }
+            }
+            
+        }
+        
+        const reset = () => {
+            document.querySelectorAll('.result-container').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.unit-input').forEach(el => el.style.display = 'block');
+            console.log('calls');
+        }
+
+    </script>
+</body>
+</html>
